@@ -3769,12 +3769,12 @@ impl State {
             return;
         }
 
-        if event.fingers() == 3 {
+        if event.fingers() == 4 || event.fingers() == 3 {
             self.niri.gesture_swipe_3f_cumulative = Some((0., 0.));
 
             // We handled this event.
             return;
-        } else if event.fingers() == 4 {
+        } else if event.fingers() == 5 {
             self.niri.layout.overview_gesture_begin();
             self.niri.queue_redraw_all();
 
