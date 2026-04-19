@@ -2,6 +2,10 @@ use std::rc::Rc;
 use std::time::Duration;
 
 use niri::layout::Options;
+<<<<<<< HEAD
+=======
+use niri::render_helpers::xray::XrayPos;
+>>>>>>> upstream/main
 use niri::render_helpers::{RenderCtx, RenderTarget};
 use niri_config::Color;
 use smithay::backend::renderer::element::RenderElement;
@@ -126,8 +130,14 @@ impl TestCase for Tile {
             target: RenderTarget::Output,
             xray: None,
         };
+<<<<<<< HEAD
         self.tile
             .render(ctx, location, location, 1., true, &mut |elem| {
+=======
+        let xray_pos = XrayPos::new(location, 1.);
+        self.tile
+            .render(ctx, location, xray_pos, true, &mut |elem| {
+>>>>>>> upstream/main
                 rv.push(Box::new(elem) as _)
             });
         rv

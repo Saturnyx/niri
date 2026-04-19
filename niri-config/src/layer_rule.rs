@@ -1,5 +1,6 @@
 use crate::appearance::{BackgroundEffectRule, BlockOutFrom, CornerRadius, ShadowRule};
 use crate::utils::RegexEq;
+use crate::window_rule::PopupsRule;
 
 #[derive(knuffel::Decode, Debug, Default, Clone, PartialEq)]
 pub struct LayerRule {
@@ -22,6 +23,11 @@ pub struct LayerRule {
     pub baba_is_float: Option<bool>,
     #[knuffel(child, default)]
     pub background_effect: BackgroundEffectRule,
+<<<<<<< HEAD
+=======
+    #[knuffel(child, default)]
+    pub popups: PopupsRule,
+>>>>>>> upstream/main
 }
 
 #[derive(knuffel::Decode, Debug, Default, Clone, PartialEq)]

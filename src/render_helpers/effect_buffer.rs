@@ -3,11 +3,19 @@ use std::mem;
 use anyhow::{ensure, Context as _};
 use smithay::backend::allocator::Fourcc;
 use smithay::backend::renderer::damage::OutputDamageTracker;
+<<<<<<< HEAD
 use smithay::backend::renderer::element::Id;
 use smithay::backend::renderer::gles::{GlesFrame, GlesRenderer, GlesTexture};
 use smithay::backend::renderer::utils::CommitCounter;
 use smithay::backend::renderer::{
     Bind as _, Color32F, ContextId, Offscreen as _, Renderer as _, Texture,
+=======
+use smithay::backend::renderer::element::{Id, RenderElementStates};
+use smithay::backend::renderer::gles::{GlesFrame, GlesRenderer, GlesTexture};
+use smithay::backend::renderer::utils::CommitCounter;
+use smithay::backend::renderer::{
+    Bind as _, Color32F, ContextId, FrameContext as _, Offscreen as _, Renderer as _, Texture,
+>>>>>>> upstream/main
 };
 use smithay::utils::{Buffer, Logical, Physical, Scale, Size, Transform};
 
@@ -58,6 +66,11 @@ struct Offscreen {
     scale: Scale<f64>,
     /// Damage tracker for drawing to the texture.
     damage: OutputDamageTracker,
+<<<<<<< HEAD
+=======
+    /// Render element states from the last render into the offscreen.
+    states: RenderElementStates,
+>>>>>>> upstream/main
     /// Rendered blurred version of the texture.
     ///
     /// When texture needs to be reblurred, this field must be reset to `None`.
@@ -100,6 +113,13 @@ impl EffectBuffer {
         self.scale
     }
 
+<<<<<<< HEAD
+=======
+    pub fn render_element_states(&self) -> Option<&RenderElementStates> {
+        self.offscreen.as_ref().map(|o| &o.states)
+    }
+
+>>>>>>> upstream/main
     pub fn update_size(&mut self, size: Size<i32, Physical>, scale: Scale<f64>) {
         self.size = size.to_logical(1).to_buffer(1, Transform::Normal);
         self.scale = scale;
@@ -186,7 +206,11 @@ impl EffectBuffer {
         let offscreen = if let Some(offscreen) = &mut self.offscreen {
             offscreen
         } else {
+<<<<<<< HEAD
             debug!("creating new offscreen texture: {reason}");
+=======
+            trace!("creating new offscreen texture: {reason}");
+>>>>>>> upstream/main
             let span = tracy_client::span!("creating effect offscreen texture");
             span.emit_text(reason);
 
@@ -202,6 +226,10 @@ impl EffectBuffer {
                 renderer_context_id: renderer.context_id(),
                 scale: self.scale,
                 damage,
+<<<<<<< HEAD
+=======
+                states: RenderElementStates::default(),
+>>>>>>> upstream/main
                 blurred: None,
             })
         };
@@ -239,6 +267,11 @@ impl EffectBuffer {
                 .context("error rendering")?
         };
 
+<<<<<<< HEAD
+=======
+        offscreen.states = res.states;
+
+>>>>>>> upstream/main
         if res.damage.is_some() {
             self.commit_counter.increment();
 
@@ -303,8 +336,15 @@ impl EffectBuffer {
             texture.clone()
         } else {
             let blur = self.blur.as_mut().context("blur is missing")?;
+<<<<<<< HEAD
             let blurred = blur
                 .render(frame, &offscreen.texture, self.blur_options)
+=======
+            let mut guard = frame.renderer();
+            let renderer = guard.as_mut();
+            let blurred = blur
+                .render(renderer, &offscreen.texture, self.blur_options)
+>>>>>>> upstream/main
                 .context("error rendering blur")?;
             offscreen.blurred.insert(blurred).clone()
         };

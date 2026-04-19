@@ -20,7 +20,11 @@ You can also enable blur on the niri side with the `blur true` background effect
 // Enable blur behind the foot terminal.
 window-rule {
     match app-id="^foot$"
+<<<<<<< HEAD
  
+=======
+
+>>>>>>> upstream/main
     background-effect {
         blur true
     }
@@ -40,6 +44,13 @@ Blur enabled via the window rule will follow the window corner radius set via [`
 On the other hand, blur enabled through `ext-background-effect` will exactly follow the shape requested by the window.
 If the window or layer has clientside rounded corners or other complex shape, it should set a corresponding blur shape through `ext-background-effect`, then it will get correctly shaped background blur without any manual niri configuration.
 
+<<<<<<< HEAD
+=======
+Windows can also blur their pop-up menus using `ext-background-effect`.
+On the niri side, you can do it with a `popups` block inside [`window-rule`](./Configuration:-Window-Rules.md#popups) and [`layer-rule`](./Configuration:-Layer-Rules.md#popups).
+See those wiki pages for examples and limitations.
+
+>>>>>>> upstream/main
 Global blur settings are configured in the [`blur {}` config section](./Configuration:-Miscellaneous.md#blur) and apply to all background blur.
 
 ### Xray
@@ -50,12 +61,18 @@ You can enable it with `xray true` background effect [window](./Configuration:-W
 Xray is automatically enabled by default if any other background effect (like blur) is active.
 This is because it's much more efficient: with xray active, niri only needs to blur the background once, and then can reuse this blurred version with no extra work (since the wallpaper changes very rarely).
 
+<<<<<<< HEAD
+=======
+If you have an animated wallpaper, xray will still have to recompute blur every frame, but that happens once and shared among all windows, rather than recomputed separately for each window.
+
+>>>>>>> upstream/main
 #### Non-xray effects (experimental)
 
 You can disable xray with `xray false` background effect window rule.
 This gives you the normal kind of blur where everything below a window is blurred.
 Keep in mind that non-xray blur and other non-xray effects are more expensive as niri has to recompute them any time you move the window, or the contents underneath change.
 
+<<<<<<< HEAD
 Non-xray effects are currently experimental because they have some known limitations.
 
 - They disappear during window open/close animations and while dragging a tiled window.
@@ -65,3 +82,26 @@ Fixing this requries subframe support in the Smithay rendering code.
 You can see this if you enable non-xray effects on a bottom or background layer surface, then open the [Overview](./Overview.md).
 Bottom and background layer surfaces are cloned on all workspaces that you can see in the Overview, causing interference.
 Fixing this requires support for framebuffer effect clones in the Smithay rendering code.
+=======
+> [!WARNING]
+> Non-xray effects are currently experimental because they have some known limitations.
+>
+> - They disappear during window open/close animations and while dragging a tiled window.
+> Fixing this requries a refactor to the niri rendering code to defer offscreen rendering, and possibly other refactors.
+
+### Implementation notes
+
+The `ext-background-effect` protocol supports any wl_surface.
+We currently implement it only for toplevels, layer surfaces, and pop-ups, which should cover the vast majority of what's actually used by applications.
+
+For pop-ups, effects default to *non-xray* because pop-ups generally appear on top of windows.
+
+In particular, the following surface types don't support `ext-background-effect`.
+They can be implemented as the need arises.
+
+- Subsurfaces. Would require implementing `clip-to-geometry` support for background effects.
+- Lock surfaces. Not useful as it would just show our red locked session background.
+- Cursor and drag-and-drop icon.
+The main challenge here will be screencasts where the cursor is rendered separately.
+This is problematic because non-xray effects require rendering the whole scene in one go rather than separately.
+>>>>>>> upstream/main

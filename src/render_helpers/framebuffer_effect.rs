@@ -1,11 +1,15 @@
 use std::cell::RefCell;
+<<<<<<< HEAD
 use std::rc::Rc;
+=======
+>>>>>>> upstream/main
 
 use glam::{Mat3, Vec2};
 use niri_config::CornerRadius;
 use smithay::backend::allocator::Fourcc;
 use smithay::backend::renderer::element::{Element, Id, RenderElement};
 use smithay::backend::renderer::gles::{
+<<<<<<< HEAD
     ffi, GlesError, GlesFrame, GlesRenderer, GlesTexProgram, GlesTexture, Uniform,
 };
 use smithay::backend::renderer::utils::CommitCounter;
@@ -18,30 +22,64 @@ use crate::render_helpers::background_effect::{EffectSubregion, RenderParams};
 use crate::render_helpers::blur::{Blur, BlurOptions};
 use crate::render_helpers::renderer::AsGlesFrame as _;
 use crate::render_helpers::shaders::{mat3_uniform, Shaders};
+=======
+    ffi, GlesError, GlesFrame, GlesRenderer, GlesTexture, Uniform,
+};
+use smithay::backend::renderer::utils::CommitCounter;
+use smithay::backend::renderer::{Frame as _, FrameContext, Offscreen, Texture as _};
+use smithay::gpu_span_location;
+use smithay::utils::user_data::UserDataMap;
+use smithay::utils::{Buffer, Logical, Physical, Rectangle, Scale, Transform};
+
+use crate::backend::tty::{TtyFrame, TtyRenderer, TtyRendererError};
+use crate::render_helpers::background_effect::RenderParams;
+use crate::render_helpers::blur::{Blur, BlurOptions};
+use crate::render_helpers::renderer::AsGlesFrame as _;
+use crate::render_helpers::shaders::{mat3_uniform, Shaders};
+use crate::utils::region::TransformedRegion;
+>>>>>>> upstream/main
 
 #[derive(Debug)]
 pub struct FramebufferEffect {
     id: Id,
+<<<<<<< HEAD
     inner: Rc<RefCell<Option<Inner>>>,
+=======
+    commit: CommitCounter,
+>>>>>>> upstream/main
 }
 
 #[derive(Debug)]
 pub struct FramebufferEffectElement {
     id: Id,
+<<<<<<< HEAD
     geometry: Rectangle<f64, Logical>,
     clip_geo: Rectangle<f64, Logical>,
     corner_radius: CornerRadius,
     subregion: Option<EffectSubregion>,
+=======
+    commit: CommitCounter,
+    geometry: Rectangle<f64, Logical>,
+    clip_geo: Rectangle<f64, Logical>,
+    corner_radius: CornerRadius,
+    subregion: Option<TransformedRegion>,
+>>>>>>> upstream/main
     scale: f32,
     blur_options: Option<BlurOptions>,
     noise: f32,
     saturation: f32,
+<<<<<<< HEAD
     inner: Rc<RefCell<Option<Inner>>>,
+=======
+>>>>>>> upstream/main
 }
 
 #[derive(Debug)]
 struct Inner {
+<<<<<<< HEAD
     program: Option<GlesTexProgram>,
+=======
+>>>>>>> upstream/main
     framebuffer: Option<GlesTexture>,
     blur: Option<Blur>,
     intermediate: Option<GlesTexture>,
@@ -53,6 +91,7 @@ impl FramebufferEffect {
     pub fn new() -> Self {
         Self {
             id: Id::new(),
+<<<<<<< HEAD
             inner: Rc::new(RefCell::new(None)),
         }
     }
@@ -60,17 +99,45 @@ impl FramebufferEffect {
     pub fn render(
         &self,
         renderer: &mut GlesRenderer,
+=======
+            commit: CommitCounter::default(),
+        }
+    }
+
+    pub fn damage(&mut self) {
+        self.commit.increment();
+    }
+
+    pub fn render(
+        &self,
+        ns: Option<usize>,
+>>>>>>> upstream/main
         params: RenderParams,
         blur_options: Option<BlurOptions>,
         noise: f32,
         saturation: f32,
+<<<<<<< HEAD
     ) -> Option<FramebufferEffectElement> {
+=======
+    ) -> FramebufferEffectElement {
+>>>>>>> upstream/main
         let (clip_geo, corner_radius) = params
             .clip
             .unwrap_or((params.geometry, CornerRadius::default()));
 
+<<<<<<< HEAD
         let element = FramebufferEffectElement {
             id: self.id.clone(),
+=======
+        let mut id = self.id.clone();
+        if let Some(ns) = ns {
+            id = id.namespaced(ns);
+        }
+
+        FramebufferEffectElement {
+            id,
+            commit: self.commit,
+>>>>>>> upstream/main
             geometry: params.geometry,
             clip_geo,
             corner_radius,
@@ -79,6 +146,7 @@ impl FramebufferEffect {
             blur_options,
             noise,
             saturation,
+<<<<<<< HEAD
             inner: self.inner.clone(),
         };
 
@@ -99,6 +167,9 @@ impl FramebufferEffect {
         }
 
         Some(element)
+=======
+        }
+>>>>>>> upstream/main
     }
 }
 
@@ -143,7 +214,11 @@ impl Element for FramebufferEffectElement {
     }
 
     fn current_commit(&self) -> CommitCounter {
+<<<<<<< HEAD
         CommitCounter::default()
+=======
+        self.commit
+>>>>>>> upstream/main
     }
 
     fn src(&self) -> Rectangle<f64, Buffer> {
@@ -167,6 +242,7 @@ impl RenderElement<GlesRenderer> for FramebufferEffectElement {
         frame: &mut GlesFrame<'_, '_>,
         src: Rectangle<f64, Buffer>,
         dst: Rectangle<i32, Physical>,
+<<<<<<< HEAD
     ) -> Result<(), GlesError> {
         let mut inner = self.inner.borrow_mut();
         let Some(inner) = &mut *inner else {
@@ -218,6 +294,64 @@ impl RenderElement<GlesRenderer> for FramebufferEffectElement {
 
         let location = gpu_span_location!("FramebufferEffectElement::capture_framebuffer");
         frame.with_gpu_span(location, |frame| {
+=======
+        cache: &UserDataMap,
+    ) -> Result<(), GlesError> {
+        let _span = tracy_client::span!("FramebufferEffectElement::capture_framebuffer");
+        let location = gpu_span_location!("FramebufferEffectElement::capture_framebuffer");
+        frame.with_gpu_span(location, |frame| {
+            let output_rect = Rectangle::from_size(frame.output_size());
+            let transform = frame.transformation();
+
+            let mut guard = frame.renderer();
+
+            let inner = cache
+                .get_or_insert::<RefCell<Inner>, _>(|| RefCell::new(Inner::new(guard.as_mut())));
+            let mut inner = inner.borrow_mut();
+            let inner = &mut *inner;
+
+            inner.intermediate = None;
+
+            // We want clamp-to-edge behavior for out-of-bounds pixels. However, glBlitFramebuffer
+            // seems to skip out-of-bounds pixels, even though my reading of the docs suggests
+            // otherwise (we use GL_LINEAR filter). So, clamp dst to the framebuffer bounds
+            // ourselves.
+            let clamped_dst = match dst.intersection(output_rect) {
+                Some(clamped) => clamped,
+                None => return Ok(()),
+            };
+            let clamp_scale = clamped_dst.size.to_f64() / dst.size.to_f64();
+
+            let dst = transform.transform_rect_in(clamped_dst, &output_rect.size);
+
+            // Compute size from our geometry and scale.
+            //
+            // The "correct" size is always dst.size since that's the pixel region we're actually
+            // blitting. However, using dst.size causes two undesirable things when zooming out for
+            // the overview:
+            // 1. dst.size shrinks every frame, causing a texture realloaction for every fb effect
+            //    element every frame.
+            // 2. The underlying blur visually expands. This is technically correct, since the
+            //    underlying contents shrink, but it's not what you visually expect: you expect the
+            //    blur to also shrink as the windows zoom out, to give the zooming out effect.
+            //
+            // Using size computed from geometry and scale solves both of those problems (even
+            // though there's a bit of a cost in that zoomed-out elements still blur the entire
+            // unzoomed texture size, and even though the blur ends up slightly wrong as there's two
+            // layers of texture resampling, up and back down).
+            //
+            // Here we use src.size rather than geometry directly because src takes into account
+            // cropping.
+            let size = src
+                .size
+                .to_logical(1., Transform::Normal)
+                .upscale(clamp_scale)
+                .to_physical_precise_round(self.scale);
+            let size = transform.transform_size(size);
+
+            let size = size.to_logical(1).to_buffer(1, Transform::Normal);
+
+>>>>>>> upstream/main
             // Recreate framebuffer if needed.
             if inner
                 .framebuffer
@@ -230,15 +364,26 @@ impl RenderElement<GlesRenderer> for FramebufferEffectElement {
                 fb
             } else {
                 trace!("creating framebuffer texture sized {} × {}", size.w, size.h);
+<<<<<<< HEAD
                 let texture = frame.create_texture(Fourcc::Abgr8888, size)?;
+=======
+                let renderer = guard.as_mut();
+                let texture = renderer.create_buffer(Fourcc::Abgr8888, size)?;
+>>>>>>> upstream/main
                 inner.framebuffer.insert(texture)
             };
 
             // Prepare blur textures.
             let mut blur = Option::zip(inner.blur.as_mut(), self.blur_options);
             if let Some((b, options)) = &mut blur {
+<<<<<<< HEAD
                 if let Err(err) = b.prepare_textures(
                     |fourcc, size| frame.create_texture(fourcc, size),
+=======
+                let renderer = guard.as_mut();
+                if let Err(err) = b.prepare_textures(
+                    |fourcc, size| renderer.create_buffer(fourcc, size),
+>>>>>>> upstream/main
                     framebuffer,
                     *options,
                 ) {
@@ -247,6 +392,13 @@ impl RenderElement<GlesRenderer> for FramebufferEffectElement {
                 }
             }
 
+<<<<<<< HEAD
+=======
+            // We can't use renderer.with_context() as that will reset the GlesFrame binding that we
+            // want to blit from.
+            drop(guard);
+
+>>>>>>> upstream/main
             // Blit the framebuffer contents.
             frame.with_context(|gl| unsafe {
                 while gl.GetError() != ffi::NO_ERROR {}
@@ -302,7 +454,13 @@ impl RenderElement<GlesRenderer> for FramebufferEffectElement {
             }
 
             if let Some((blur, options)) = blur {
+<<<<<<< HEAD
                 match blur.render(frame, framebuffer, options) {
+=======
+                let mut guard = frame.renderer();
+                let renderer = guard.as_mut();
+                match blur.render(renderer, framebuffer, options) {
+>>>>>>> upstream/main
                     Ok(blurred) => inner.intermediate = Some(blurred),
                     Err(err) => {
                         warn!("error rendering blur: {err:?}");
@@ -321,11 +479,24 @@ impl RenderElement<GlesRenderer> for FramebufferEffectElement {
         dst: Rectangle<i32, Physical>,
         damage: &[Rectangle<i32, Physical>],
         _opaque_regions: &[Rectangle<i32, Physical>],
+<<<<<<< HEAD
     ) -> Result<(), GlesError> {
         let mut inner = self.inner.borrow_mut();
         let Some(inner) = &mut *inner else {
             return Ok(());
         };
+=======
+        cache: Option<&UserDataMap>,
+    ) -> Result<(), GlesError> {
+        let Some(cache) = cache else {
+            return Ok(());
+        };
+        let Some(inner) = cache.get::<RefCell<Inner>>() else {
+            return Ok(());
+        };
+        let mut inner = inner.borrow_mut();
+        let inner = &mut *inner;
+>>>>>>> upstream/main
 
         let Some(texture) = &inner.intermediate else {
             return Ok(());
@@ -379,8 +550,13 @@ impl RenderElement<GlesRenderer> for FramebufferEffectElement {
             clamped_dst.size.to_f64().upscale(dst_to_src).to_logical(1.),
         );
 
+<<<<<<< HEAD
         let uniforms = inner
             .program
+=======
+        let program = Shaders::get_from_frame(frame).postprocess_and_clip.clone();
+        let uniforms = program
+>>>>>>> upstream/main
             .is_some()
             .then(|| self.compute_uniforms(crop, frame.transformation()));
         let uniforms = uniforms.as_ref().map_or(&[][..], |x| &x[..]);
@@ -394,7 +570,11 @@ impl RenderElement<GlesRenderer> for FramebufferEffectElement {
             // The intermediate texture has the same transform as the frame.
             frame.transformation().invert(),
             1.,
+<<<<<<< HEAD
             inner.program.as_ref(),
+=======
+            program.as_ref(),
+>>>>>>> upstream/main
             uniforms,
         )
     }
@@ -406,9 +586,16 @@ impl<'render> RenderElement<TtyRenderer<'render>> for FramebufferEffectElement {
         frame: &mut TtyFrame<'_, '_, '_>,
         src: Rectangle<f64, Buffer>,
         dst: Rectangle<i32, Physical>,
+<<<<<<< HEAD
     ) -> Result<(), TtyRendererError<'render>> {
         let gles_frame = frame.as_gles_frame();
         RenderElement::<GlesRenderer>::capture_framebuffer(&self, gles_frame, src, dst)?;
+=======
+        cache: &UserDataMap,
+    ) -> Result<(), TtyRendererError<'render>> {
+        let gles_frame = frame.as_gles_frame();
+        RenderElement::<GlesRenderer>::capture_framebuffer(&self, gles_frame, src, dst, cache)?;
+>>>>>>> upstream/main
         Ok(())
     }
 
@@ -419,14 +606,30 @@ impl<'render> RenderElement<TtyRenderer<'render>> for FramebufferEffectElement {
         dst: Rectangle<i32, Physical>,
         damage: &[Rectangle<i32, Physical>],
         opaque_regions: &[Rectangle<i32, Physical>],
+<<<<<<< HEAD
     ) -> Result<(), TtyRendererError<'render>> {
         let gles_frame = frame.as_gles_frame();
         RenderElement::<GlesRenderer>::draw(&self, gles_frame, src, dst, damage, opaque_regions)?;
+=======
+        cache: Option<&UserDataMap>,
+    ) -> Result<(), TtyRendererError<'render>> {
+        let gles_frame = frame.as_gles_frame();
+        RenderElement::<GlesRenderer>::draw(
+            &self,
+            gles_frame,
+            src,
+            dst,
+            damage,
+            opaque_regions,
+            cache,
+        )?;
+>>>>>>> upstream/main
         Ok(())
     }
 }
 
 impl Inner {
+<<<<<<< HEAD
     fn new(renderer: &mut GlesRenderer, blur: Option<Blur>) -> Self {
         let program = Shaders::get(renderer).postprocess_and_clip.clone();
 
@@ -434,6 +637,12 @@ impl Inner {
             program,
             framebuffer: None,
             blur,
+=======
+    fn new(renderer: &mut GlesRenderer) -> Self {
+        Inner {
+            framebuffer: None,
+            blur: Blur::new(renderer),
+>>>>>>> upstream/main
             intermediate: None,
             subregion_damage: Vec::new(),
         }

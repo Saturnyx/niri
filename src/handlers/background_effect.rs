@@ -2,7 +2,11 @@ use std::sync::{Arc, Mutex};
 
 use smithay::delegate_background_effect;
 use smithay::reexports::wayland_server::protocol::wl_surface::WlSurface;
+<<<<<<< HEAD
 use smithay::utils::{Logical, Point, Rectangle, Size};
+=======
+use smithay::utils::{Logical, Rectangle};
+>>>>>>> upstream/main
 use smithay::wayland::background_effect::{
     self, BackgroundEffectSurfaceCachedState, ExtBackgroundEffectHandler,
 };
@@ -10,9 +14,13 @@ use smithay::wayland::compositor::{
     add_post_commit_hook, with_states, RegionAttributes, SurfaceData,
 };
 
+<<<<<<< HEAD
 use crate::delegate_kde_blur;
 use crate::niri::State;
 use crate::protocols::kde_blur::{KdeBlurHandler, KdeBlurRegion, KdeBlurSurfaceCachedState};
+=======
+use crate::niri::State;
+>>>>>>> upstream/main
 use crate::utils::region::region_to_non_overlapping_rects;
 
 /// Per-surface cache for processed blur region (non-overlapping rects).
@@ -61,7 +69,10 @@ fn recompute_blur_region(states: &SurfaceData, inner: &mut CachedBlurRegionInner
     };
     let rects = Arc::make_mut(rects);
 
+<<<<<<< HEAD
     // Prefer ext-background-effect.
+=======
+>>>>>>> upstream/main
     if cached.has::<BackgroundEffectSurfaceCachedState>() {
         let mut guard = cached.get::<BackgroundEffectSurfaceCachedState>();
         if let Some(region) = &guard.current().blur_region {
@@ -72,6 +83,7 @@ fn recompute_blur_region(states: &SurfaceData, inner: &mut CachedBlurRegionInner
         return;
     }
 
+<<<<<<< HEAD
     if cached.has::<KdeBlurSurfaceCachedState>() {
         let mut guard = cached.get::<KdeBlurSurfaceCachedState>();
         match &guard.current().blur_region {
@@ -95,6 +107,8 @@ fn recompute_blur_region(states: &SurfaceData, inner: &mut CachedBlurRegionInner
     }
 
     // Neither is present.
+=======
+>>>>>>> upstream/main
     inner.rects = None;
 }
 
@@ -122,6 +136,11 @@ fn mark_blur_region_pending_dirty(wl_surface: &WlSurface) {
                     if guard.pending_dirty {
                         guard.pending_dirty = false;
                         guard.dirty = true;
+<<<<<<< HEAD
+=======
+
+                        crate::render_helpers::background_effect::damage_surface(states);
+>>>>>>> upstream/main
                     }
                 } else {
                     error!("unexpected missing CachedBlurRegionUserData");
@@ -145,6 +164,7 @@ impl ExtBackgroundEffectHandler for State {
     }
 }
 delegate_background_effect!(State);
+<<<<<<< HEAD
 
 impl KdeBlurHandler for State {
     fn set_blur_region(&mut self, wl_surface: WlSurface) {
@@ -156,3 +176,5 @@ impl KdeBlurHandler for State {
     }
 }
 delegate_kde_blur!(State);
+=======
+>>>>>>> upstream/main

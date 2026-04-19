@@ -18,6 +18,10 @@ use super::{
 use crate::animation::{Animation, Clock};
 use crate::niri_render_elements;
 use crate::render_helpers::renderer::NiriRenderer;
+<<<<<<< HEAD
+=======
+use crate::render_helpers::xray::XrayPos;
+>>>>>>> upstream/main
 use crate::render_helpers::RenderCtx;
 use crate::utils::transaction::TransactionBlocker;
 use crate::utils::{
@@ -489,6 +493,7 @@ impl<W: LayoutElement> FloatingSpace<W> {
         // Now, descendants is in back-to-front order, and repositioning them in the front-to-back
         // order will preserve the subsequent indices and work out right.
         let mut idx = idx;
+        #[allow(clippy::explicit_counter_loop)]
         for descendant_idx in descendants.into_iter().rev() {
             self.raise_window(descendant_idx, idx);
             idx += 1;
@@ -1056,8 +1061,12 @@ impl<W: LayoutElement> FloatingSpace<W> {
     pub fn render<R: NiriRenderer>(
         &self,
         mut ctx: RenderCtx<R>,
+<<<<<<< HEAD
         pos_in_backdrop: Point<f64, Logical>,
         zoom: f64,
+=======
+        xray_pos: XrayPos,
+>>>>>>> upstream/main
         view_rect: Rectangle<f64, Logical>,
         focus_ring: bool,
         push: &mut dyn FnMut(FloatingSpaceRenderElement<R>),
@@ -1077,6 +1086,7 @@ impl<W: LayoutElement> FloatingSpace<W> {
             // For the active tile, draw the focus ring.
             let focus_ring = focus_ring && Some(tile.window().id()) == active.as_ref();
 
+<<<<<<< HEAD
             let pos_in_backdrop = pos_in_backdrop + tile_pos.upscale(zoom);
             tile.render(
                 ctx.r(),
@@ -1086,6 +1096,12 @@ impl<W: LayoutElement> FloatingSpace<W> {
                 focus_ring,
                 &mut |elem| push(elem.into()),
             );
+=======
+            let xray_pos = xray_pos.offset(tile_pos);
+            tile.render(ctx.r(), tile_pos, xray_pos, focus_ring, &mut |elem| {
+                push(elem.into())
+            });
+>>>>>>> upstream/main
         }
     }
 
