@@ -98,6 +98,7 @@ wayland-scanner = "0.31.9"
 wayland-server = { version = "0.31.12", features = ["libwayland_1_23"] }
 xcursor = "0.3.10"
 zbus = { version = "5.13.2", optional = true }
+wayland-protocols-plasma = "0.3.12"
 
 [dependencies.smithay]
 workspace = true
